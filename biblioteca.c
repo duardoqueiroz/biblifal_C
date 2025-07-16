@@ -17,21 +17,21 @@ typedef struct Book {
     int disponivel;
 } Book;
 
-typedef struct QueueNode {
+typedef struct LoanRequestNode {
     char student_matricula[20];
     char book_codigo[20];
-    struct QueueNode* next;
-} QueueNode;
+    struct LoanRequestNode* next;
+} LoanRequestNode;
 
 typedef struct {
-    QueueNode* front;
-    QueueNode* rear;
-} Queue;
+    LoanRequestNode* front;
+    LoanRequestNode* rear;
+} LoanRequestQueue;
 
 typedef struct {
     char book_codigos[100][20];
     int top;
-} Stack;
+} ReturnedBooksStack;
 
 Student* students;
 Book* books;
@@ -40,21 +40,24 @@ int total_books = 0;
 int students_capacity = 10;
 int books_capacity = 10;
 
-Queue* create_queue() {
-    Queue* queue = (Queue*)malloc(sizeof(Queue));
+LoanRequestQueue* loan_queue = NULL;
+ReturnedBooksStack* return_stack = NULL;
+
+LoanRequestQueue* create_loan_request_queue() {
+    LoanRequestQueue* queue = (LoanRequestQueue*)malloc(sizeof(LoanRequestQueue));
     queue->front = NULL;
     queue->rear = NULL;
     return queue;
 }
 
-Stack* create_stack() {
-    Stack* stack = (Stack*)malloc(sizeof(Stack));
+ReturnedBooksStack* create_returned_books_stack() {
+    ReturnedBooksStack* stack = (ReturnedBooksStack*)malloc(sizeof(ReturnedBooksStack));
     stack->top = -1;
     return stack;
 }
 
-void enqueue(Queue* queue, const char* student_matricula, const char* book_codigo) {
-    QueueNode* new_node = (QueueNode*)malloc(sizeof(QueueNode));
+void enqueue_loan_request(LoanRequestQueue* queue, const char* student_matricula, const char* book_codigo) {
+    LoanRequestNode* new_node = (LoanRequestNode*)malloc(sizeof(LoanRequestNode));
     strcpy(new_node->student_matricula, student_matricula);
     strcpy(new_node->book_codigo, book_codigo);
     new_node->next = NULL;
@@ -68,12 +71,12 @@ void enqueue(Queue* queue, const char* student_matricula, const char* book_codig
     }
 }
 
-void dequeue(Queue* queue) {
+void dequeue_loan_request(LoanRequestQueue* queue) {
     if (queue->front == NULL) {
         return;
     }
     
-    QueueNode* temp = queue->front;
+    LoanRequestNode* temp = queue->front;
     queue->front = queue->front->next;
     
     if (queue->front == NULL) {
@@ -83,7 +86,7 @@ void dequeue(Queue* queue) {
     free(temp);
 }
 
-void push(Stack* stack, const char* book_codigo) {
+void push_returned_book(ReturnedBooksStack* stack, const char* book_codigo) {
     if (stack->top == 100 - 1) {
         printf("Pilha cheia! Nao e possivel adicionar mais livros devolvidos.\n");
         return;
@@ -93,7 +96,7 @@ void push(Stack* stack, const char* book_codigo) {
     strcpy(stack->book_codigos[stack->top], book_codigo);
 }
 
-void pop(Stack* stack) {
+void pop_returned_book(ReturnedBooksStack* stack) {
     if (stack->top == -1) {
         return;
     }
@@ -144,62 +147,6 @@ void list_students() {
     }
 }
 
-void update_student() {
-    char matricula_busca[20];
-    int encontrado = 0;
-    int i = 0;
-    
-    printf("Digite a matricula do aluno a ser editado: ");
-    scanf("%s", matricula_busca);
-    
-    while(i < total_students) {
-        if(students[i].ativo == 1 && strcmp(students[i].matricula, matricula_busca) == 0) {
-            encontrado = 1;
-            printf("Aluno encontrado! Digite os novos dados:\n");
-            
-            printf("Novo nome: ");
-            scanf("%s", students[i].nome);
-            
-            printf("Novo email: ");
-            scanf("%s", students[i].email);
-            
-            printf("Novo CPF: ");
-            scanf("%s", students[i].cpf);
-            
-            printf("Aluno atualizado com sucesso!\n");
-            break;
-        }
-        i++;
-    }
-    
-    if(encontrado == 0) {
-        printf("Aluno nao encontrado!\n");
-    }
-}
-
-void delete_student() {
-    char matricula_busca[20];
-    int encontrado = 0;
-    int i = 0;
-    
-    printf("Digite a matricula do aluno a ser removido: ");
-    scanf("%s", matricula_busca);
-    
-    while(i < total_students) {
-        if(students[i].ativo == 1 && strcmp(students[i].matricula, matricula_busca) == 0) {
-            students[i].ativo = 0;
-            encontrado = 1;
-            printf("Aluno removido com sucesso!\n");
-            break;
-        }
-        i++;
-    }
-    
-    if(encontrado == 0) {
-        printf("Aluno nao encontrado!\n");
-    }
-}
-
 void create_book() {
     if(total_books >= books_capacity) {
         books_capacity = books_capacity * 2;
@@ -239,59 +186,6 @@ void list_books() {
     }
 }
 
-void update_book() {
-    char codigo_busca[20];
-    int encontrado = 0;
-    int i = 0;
-    
-    printf("Digite o codigo do livro a ser editado: ");
-    scanf("%s", codigo_busca);
-    
-    while(i < total_books) {
-        if(books[i].disponivel == 1 && strcmp(books[i].codigo, codigo_busca) == 0) {
-            encontrado = 1;
-            printf("Livro encontrado! Digite os novos dados:\n");
-            
-            printf("Novo titulo: ");
-            scanf("%s", books[i].titulo);
-            
-            printf("Novo autor: ");
-            scanf("%s", books[i].autor);
-            
-            printf("Livro atualizado com sucesso!\n");
-            break;
-        }
-        i++;
-    }
-    
-    if(encontrado == 0) {
-        printf("Livro nao encontrado!\n");
-    }
-}
-
-void delete_book() {
-    char codigo_busca[20];
-    int encontrado = 0;
-    int i = 0;
-    
-    printf("Digite o codigo do livro a ser removido: ");
-    scanf("%s", codigo_busca);
-    
-    while(i < total_books) {
-        if(books[i].disponivel == 1 && strcmp(books[i].codigo, codigo_busca) == 0) {
-            books[i].disponivel = 0;
-            encontrado = 1;
-            printf("Livro removido com sucesso!\n");
-            break;
-        }
-        i++;
-    }
-    
-    if(encontrado == 0) {
-        printf("Livro nao encontrado!\n");
-    }
-}
-
 void request_book_loan() {
     char matricula[20];
     char codigo[20];
@@ -302,7 +196,7 @@ void request_book_loan() {
     printf("Digite o codigo do livro: ");
     scanf("%s", codigo);
     
-    enqueue(loan_queue, matricula, codigo);
+    enqueue_loan_request(loan_queue, matricula, codigo);
     printf("Solicitacao de emprestimo adicionada a fila com sucesso!\n");
 }
 
@@ -312,11 +206,11 @@ void return_book() {
     printf("Digite o codigo do livro a ser devolvido: ");
     scanf("%s", codigo);
     
-    push(return_stack, codigo);
+    push_returned_book(return_stack, codigo);
     printf("Livro devolvido com sucesso!\n");
 }
 
-void display_queue_recursive(QueueNode* node) {
+void display_loan_request_queue_recursive(LoanRequestNode* node) {
     if (node == NULL) {
         return;
     }
@@ -344,7 +238,7 @@ void display_queue_recursive(QueueNode* node) {
     
     printf("Aluno: %s (Matricula: %s) | Livro: %s (Codigo: %s)\n", 
            student_name, node->student_matricula, book_title, node->book_codigo);
-    display_queue_recursive(node->next);
+    display_loan_request_queue_recursive(node->next);
 }
 
 void display_waiting_queue() {
@@ -354,7 +248,7 @@ void display_waiting_queue() {
     }
     
     printf("\n=== FILA DE ESPERA ===\n");
-    display_queue_recursive(loan_queue->front);
+    display_loan_request_queue_recursive(loan_queue->front);
 }
 
 void display_returned_books() {
@@ -384,23 +278,25 @@ void display_returned_books() {
     }
 }
 
-void free_queue_recursive(QueueNode* node) {
+void free_loan_request_queue_recursive(LoanRequestNode* node) {
     if (node == NULL) {
         return;
     }
     
-    free_queue_recursive(node->next);
+    free_loan_request_queue_recursive(node->next);
     free(node);
 }
 
-Queue* loan_queue;
-Stack* return_stack;
+void request_book_loan();
+void return_book();
+void display_waiting_queue();
+void display_returned_books();
 
 int main() {
     students = (Student*)malloc(students_capacity * sizeof(Student));
     books = (Book*)malloc(books_capacity * sizeof(Book));
-    loan_queue = create_queue();
-    return_stack = create_stack();
+    loan_queue = create_loan_request_queue();
+    return_stack = create_returned_books_stack();
     
     int choice;
     int continuar=1;
@@ -410,7 +306,7 @@ int main() {
     int continuar_book = 1;
     
     while(continuar==1){
-        printf("\n=== SISTEMA DE BIBLIOTECA IFAL ARAPIRACA ===\n");
+        printf("\n=== BIBLIOTECA DO IFAL ===\n");
         printf("1. Gerenciar alunos\n");
         printf("2. Gerenciar livros\n");
         printf("3. Solicitar emprestimo de livro\n");
@@ -427,9 +323,7 @@ int main() {
                 printf("\n=== GERENCIAMENTO DE ALUNOS ===\n");
                 printf("1. Cadastrar aluno\n");
                 printf("2. Listar alunos\n");
-                printf("3. Editar aluno\n");
-                printf("4. Remover aluno\n");
-                printf("5. Voltar ao menu principal\n");
+                printf("3. Voltar ao menu principal\n");
                 printf("Escolha uma opcao: ");
                 scanf("%d", &student_choice);
                 
@@ -440,12 +334,6 @@ int main() {
                     list_students();
                 }
                 else if(student_choice == 3) {
-                    update_student();
-                }
-                else if(student_choice == 4) {
-                    delete_student();
-                }
-                else if(student_choice == 5) {
                     continuar_student = 0;
                 }
                 else {
@@ -459,9 +347,7 @@ int main() {
                 printf("\n=== GERENCIAMENTO DE LIVROS ===\n");
                 printf("1. Cadastrar livro\n");
                 printf("2. Listar livros\n");
-                printf("3. Editar livro\n");
-                printf("4. Remover livro\n");
-                printf("5. Voltar ao menu principal\n");
+                printf("3. Voltar ao menu principal\n");
                 printf("Escolha uma opcao: ");
                 scanf("%d", &book_choice);
                 
@@ -472,12 +358,6 @@ int main() {
                     list_books();
                 }
                 else if(book_choice == 3) {
-                    update_book();
-                }
-                else if(book_choice == 4) {
-                    delete_book();
-                }
-                else if(book_choice == 5) {
                     continuar_book = 0;
                 }
                 else {
@@ -498,8 +378,8 @@ int main() {
             display_returned_books();
         }
         else if(choice==7){
-            printf("Saindo do sistema e liberando memoria...\n");
-            free_queue_recursive(loan_queue->front);
+            printf("Saindo do sistema...\n");
+            free_loan_request_queue_recursive(loan_queue->front);
             free(loan_queue);
             free(return_stack);
             free(students);
